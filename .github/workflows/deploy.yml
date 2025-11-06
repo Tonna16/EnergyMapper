@@ -4,20 +4,20 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: write        # allow committing/pushing
-  pages: write           # allow publishing to Pages
+  contents: write
+  pages: write
   id-token: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-            - name: Checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: false
-
 
       - name: Use Node.js
         uses: actions/setup-node@v4
@@ -30,20 +30,26 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Debug - list dist contents
+      - name: Debug - show dist
         run: |
-          echo "PWD: $(pwd)"
-          ls -la
+          echo "cwd: $(pwd)"
           if [ -d ./dist ]; then
-            echo "dist exists. listing:"
+            echo "dist exists:"
             ls -la ./dist
+            head -n 40 ./dist/index.html || true
           else
             echo "dist not found"
             exit 1
           fi
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Upload Pages artifact (dist)
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          path: ./dist
+
+  deploy:
+    needs: build-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
